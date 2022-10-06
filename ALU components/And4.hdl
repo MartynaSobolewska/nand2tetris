@@ -1,0 +1,12 @@
+/** 
+* 4-way and gate
+*/
+
+CHIP And4 {
+    IN a, b, c, d;
+    OUT out;
+
+    PARTS:
+        And3(a=a, b=b, c=c, out=abc);
+        And(a=abc, b=d, out=out);
+}

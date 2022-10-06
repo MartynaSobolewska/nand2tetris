@@ -1,0 +1,76 @@
+/** 
+* Computes a sum of 4 bits using carry lookahead method.
+* A faster version of 4 bit adder, later used to build CLA16
+* By pre-computing carry generators and propagators, chaining up adders can be avoided.
+*/
+
+CHIP CLA4 {
+    // two numbers and a carry
+    IN a[4], b[4], c0;
+    // sum and group carry
+    OUT sum[4], c4;
+
+    PARTS:
+        // generate logic
+        And(a=a[0], b=b[0], out=g0);
+        And(a=a[1], b=b[1], out=g1);
+        And(a=a[2], b=b[2], out=g2);
+        And(a=a[3], b=b[3], out=g3);
+
+        // propagate logic
+        Xor(a=a[0], b=b[0], out=p0);
+        Xor(a=a[1], b=b[1], out=p1);
+        Xor(a=a[2], b=b[2], out=p2);
+        Xor(a=a[3], b=b[3], out=p3);
+
+        // carry prediction
+
+        // c1 = g0 + p0c0
+        And(a=p0, b=c0, out=pc0); // propagate with previous carry will produce 1 if both 1.
+        Or(a=g0, b=pc0, out=c1);
+
+        // c2 = g1 + p1c1 -> substitution
+        // c2 = g1 + p1(g0 + p0c0) = g1 + p1g0 + p1p0c0
+        And3(a=p1, b=p0, c=c0, out=p1p0c0);
+        And(a=p1, b=g0, out=p1g0);
+        Or3(a=g1, b=p1g0, c=p1p0c0, out=c2);
+
+        // c3 = g2 + p2c2 -> substitution
+        // c3 = g2 + p2(g1 + p1g0 + p1p0c0) = g2 + p2g1 + p2p1g0 + p2p1p0c0
+        And4(a=p2, b=p1, c=p0, d=c0, out=p2p1p0c0);
+        And3(a=p2, b=p1, c=g0, out=p2p1g0);
+        And(a=p2, b=g1, out=p2g1);
+        Or4(a=g2, b=p2g1, c=p2p1g0, d=p2p1p0c0, out=c3);
+
+        // c4 = g3 + p3c3 -> substitution
+        // c4 = g3 + p3(g2 + p2g1 + p2p1g0 + p2p1p0c0) = g3 + p3g2 + p3p2g1 + p3p2p1g0 + p3p2p1p0c0
+        And5(a=p3, b=p2, c=p1, d=p0, e=c0, out=p3p2p1p0c0);
+        And4(a=p3, b=p2, c=p1, d=g0, out=p3p2p1g0);
+        And3(a=p3, b=p2, c=g1, out=p3p2g1);
+        And(a=p3, b=g2, out=p3g2);
+        Or5(a=g3, b=p3g2, c=p3p2g1, d=p3p2p1g0, e=p3p2p1p0c0, out=c4);
+
+        // // group carry
+
+        // // PG - group propagate
+        // // pg = p0p1p2p3
+        // And4(a=p0, b=p1, c=p2, d=p3, out=pg);
+
+        // // GG - group generate
+        // // gg = g3 + g2p3 + g1p3p2 + g0p3p2p1
+        // And4(a=g0, b=p3, c=p2, d=p1, out=g0p3p2p1);
+        // And3(a=g1, b=p3, c=p2, out=g1p3p2);
+        // And(a=g2, b=p3, out=g2p3);
+        // Or4(a=g3, b=g2p3, c=g1p3p2, d=g0p3p2p1, out=gg);
+
+        // // CG - group carry
+        // // gc = gg + pgc0
+        // And(a=pg, b=c0, out=pgc0);
+        // Or(a=gg, b=pgc0, out=cg);
+
+        // sums
+        Xor(a=c0, b=p0, out=sum[0]);
+        Xor(a=c1, b=p1, out=sum[1]);
+        Xor(a=c2, b=p2, out=sum[2]);
+        Xor(a=c3, b=p3, out=sum[3]);
+}
