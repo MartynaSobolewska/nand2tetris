@@ -1,0 +1,9 @@
+CHIP Mux4Way {
+    IN a, b, c, d, sel[2];
+    OUT out;
+
+    PARTS:
+    Mux(a=a, b=b, sel=sel[0], out=muxab);         // choose between a and b
+    Mux(a=c, b=d, sel=sel[0], out=muxcd);         // choose between c and d
+    Mux(a=muxab, b=muxcd, sel=sel[1], out=out);   // choose ab selection or cd selection
+}
